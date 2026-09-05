@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEditorStore, flushAutosave } from "@/store/editorStore";
 import { loadProject } from "@/lib/storage/projectStore";
 import type { MediaAsset } from "@/lib/timeline/types";
-import { ASPECT_RATIOS } from "@/lib/timeline/types";
-import { BackIcon, UndoIcon } from "@/components/icons";
+import { BackIcon, UndoIcon, ChevronIcon } from "@/components/icons";
+import { useIsMobile } from "@/lib/useIsMobile";
 import ExportButton from "./ExportButton";
 import EditableProjectName from "./EditableProjectName";
 import MediaLibrary from "./MediaLibrary";
@@ -16,18 +16,20 @@ import PreviewPlayer from "./PreviewPlayer";
 import Toolbar from "./Toolbar";
 import PropertiesPanel from "./PropertiesPanel";
 import SaveStatusIndicator from "./SaveStatusIndicator";
+import MobileEditorLayout from "./MobileEditorLayout";
 
 const DEFAULT_IMAGE_DURATION = 5;
 
 export default function EditorScreen({ projectId }: { projectId: string }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState<"media" | "music">("media");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const project = useEditorStore((s) => s.project);
   const loadInto = useEditorStore((s) => s.loadInto);
   const addClip = useEditorStore((s) => s.addClip);
   const addTextClip = useEditorStore((s) => s.addTextClip);
-  const setAspectRatio = useEditorStore((s) => s.setAspectRatio);
   const playheadSec = useEditorStore((s) => s.playheadSec);
   const canUndo = useEditorStore((s) => s.past.length > 0);
 
@@ -123,6 +125,27 @@ export default function EditorScreen({ projectId }: { projectId: string }) {
     );
   }
 
+  if (isMobile) {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden">
+        <header
+          className="flex shrink-0 items-center gap-3 px-3 py-2"
+          style={{ borderBottom: "2px solid var(--color-divider)" }}
+        >
+          <button onClick={goToProjects} className="btn btn-secondary btn-icon" style={{ width: 30, height: 30 }}>
+            <BackIcon size={13} />
+          </button>
+          <EditableProjectName name={project.name} />
+          <div className="ml-auto flex items-center gap-2">
+            <SaveStatusIndicator />
+            <ExportButton />
+          </div>
+        </header>
+        <MobileEditorLayout projectId={projectId} onAddAsset={addAssetToTimeline} />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header
@@ -148,65 +171,77 @@ export default function EditorScreen({ projectId }: { projectId: string }) {
 
         <div className="ml-auto flex items-center gap-4">
           <SaveStatusIndicator />
-          <select
-            value={project.aspectRatio}
-            onChange={(e) => setAspectRatio(e.target.value as typeof project.aspectRatio)}
-            className="btn btn-secondary"
-            style={{ fontSize: 12, cursor: "pointer" }}
-            title="Output canvas shape"
-          >
-            {ASPECT_RATIOS.map((a) => (
-              <option key={a.value} value={a.value}>
-                {a.label}
-              </option>
-            ))}
-          </select>
           <ExportButton />
         </div>
       </header>
 
       <div className="flex flex-1" style={{ minHeight: 0 }}>
-        <aside className="flex w-[312px] flex-col" style={{ borderRight: "2px solid var(--color-divider)", minHeight: 0 }}>
-          <div className="flex" style={{ borderBottom: "2px solid var(--color-divider)" }}>
+        <aside
+          className="flex flex-col"
+          style={{ width: sidebarCollapsed ? 44 : 312, borderRight: "2px solid var(--color-divider)", minHeight: 0 }}
+        >
+          {sidebarCollapsed ? (
             <button
-              onClick={() => setTab("media")}
-              className="flex-1 py-2.5 px-3 text-center"
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                background: tab === "media" ? "var(--color-text)" : "transparent",
-                color: tab === "media" ? "var(--color-bg)" : "color-mix(in srgb, var(--color-text) 55%, transparent)",
-              }}
+              onClick={() => setSidebarCollapsed(false)}
+              className="flex flex-1 items-center justify-center"
+              title="Expand panel"
             >
-              Media
+              <span style={{ display: "inline-flex", transform: "rotate(180deg)" }}>
+                <ChevronIcon size={14} />
+              </span>
             </button>
-            <button
-              onClick={() => setTab("music")}
-              className="flex-1 py-2.5 px-3 text-center"
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                borderLeft: "1px solid var(--color-divider)",
-                background: tab === "music" ? "var(--color-text)" : "transparent",
-                color: tab === "music" ? "var(--color-bg)" : "color-mix(in srgb, var(--color-text) 55%, transparent)",
-              }}
-            >
-              Music
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {tab === "media" ? (
-              <MediaLibrary projectId={projectId} onAdd={addAssetToTimeline} />
-            ) : (
-              <MusicSearch projectId={projectId} onAddAsset={addAssetToTimeline} />
-            )}
-          </div>
+          ) : (
+            <>
+              <div className="flex items-center" style={{ borderBottom: "2px solid var(--color-divider)" }}>
+                <button
+                  onClick={() => setTab("media")}
+                  className="flex-1 py-2.5 px-3 text-center"
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 800,
+                    fontSize: 12,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    background: tab === "media" ? "var(--color-text)" : "transparent",
+                    color: tab === "media" ? "var(--color-bg)" : "color-mix(in srgb, var(--color-text) 55%, transparent)",
+                  }}
+                >
+                  Media
+                </button>
+                <button
+                  onClick={() => setTab("music")}
+                  className="flex-1 py-2.5 px-3 text-center"
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 800,
+                    fontSize: 12,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    borderLeft: "1px solid var(--color-divider)",
+                    background: tab === "music" ? "var(--color-text)" : "transparent",
+                    color: tab === "music" ? "var(--color-bg)" : "color-mix(in srgb, var(--color-text) 55%, transparent)",
+                  }}
+                >
+                  Music
+                </button>
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="btn btn-secondary btn-icon"
+                  style={{ width: 28, height: 28, margin: "0 6px", flexShrink: 0 }}
+                  title="Collapse panel"
+                >
+                  <ChevronIcon size={12} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {tab === "media" ? (
+                  <MediaLibrary projectId={projectId} onAdd={addAssetToTimeline} />
+                ) : (
+                  <MusicSearch projectId={projectId} onAddAsset={addAssetToTimeline} />
+                )}
+              </div>
+            </>
+          )}
         </aside>
 
         <main className="flex flex-1 flex-col" style={{ minWidth: 0 }}>

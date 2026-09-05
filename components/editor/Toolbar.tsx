@@ -2,6 +2,7 @@
 
 import { useEditorStore } from "@/store/editorStore";
 import { PlayIcon, SplitIcon, TextIcon, TrashIcon } from "@/components/icons";
+import AspectRatioSelect from "./AspectRatioSelect";
 
 function fmt(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -51,9 +52,9 @@ export default function Toolbar() {
         <TextIcon size={14} />
         Add text
       </button>
-      <span className="text-muted" style={{ fontSize: 11 }}>
-        Crop &amp; fit are in the Properties panel →
-      </span>
+
+      <div style={{ width: 1, height: 22, background: "var(--color-divider)" }} />
+      <AspectRatioSelect />
 
       <button
         disabled={!selectedClipId}

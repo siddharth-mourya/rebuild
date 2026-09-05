@@ -37,3 +37,4 @@ export const TrashIcon = (p: IconProps) => base("M3 6h18M8 6V4h8v2M19 6l-1 14H6L
 export const PlusIcon = (p: IconProps) => base("M12 5v14M5 12h14", p);
 export const UndoIcon = (p: IconProps) => base("M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3", p);
 export const RedoIcon = (p: IconProps) => base("M15 14l5-5-5-5M20 9H10a6 6 0 0 0 0 12h3", p);
+export const ChevronIcon = (p: IconProps) => base("M15 18l-6-6 6-6", p);

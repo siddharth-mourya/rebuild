@@ -3,6 +3,9 @@
 import { useEditorStore } from "@/store/editorStore";
 import { useAssetObjectUrl } from "@/lib/storage/useAssetObjectUrl";
 import CropControl from "./CropControl";
+import EmojiPicker from "./EmojiPicker";
+
+const HIGHLIGHT_SWATCHES = [null, "#201e1d", "#ec3013", "#bab6b6"];
 
 function fmt(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -105,7 +108,10 @@ export default function PropertiesPanel() {
       {track.kind === "text" && (
         <div className="flex flex-col gap-3 p-3" style={{ borderBottom: "1px solid var(--color-divider)" }}>
           <div className="field">
-            <label>Content</label>
+            <div className="flex items-center justify-between" style={{ marginBottom: 5 }}>
+              <label style={{ margin: 0 }}>Content</label>
+              <EmojiPicker onSelect={(emoji) => updateClip(clip.id, { text: (clip.text ?? "") + emoji })} />
+            </div>
             <textarea
               value={clip.text ?? ""}
               onChange={(e) => updateClip(clip.id, { text: e.target.value })}
@@ -113,6 +119,7 @@ export default function PropertiesPanel() {
               style={{ minHeight: 56 }}
             />
           </div>
+
           <div className="flex gap-2">
             <div className="field" style={{ flex: 1 }}>
               <label>Size</label>
@@ -125,17 +132,73 @@ export default function PropertiesPanel() {
                 className="input"
               />
             </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Color</label>
-              <input
-                type="color"
-                value={clip.textColor ?? "#ffffff"}
-                onChange={(e) => updateClip(clip.id, { textColor: e.target.value })}
-                className="input"
-                style={{ padding: 2, height: 36 }}
-              />
+            <button
+              onClick={() => updateClip(clip.id, { bold: !clip.bold })}
+              className="btn btn-secondary btn-icon"
+              style={{ width: 36, height: 36, marginTop: 21, fontWeight: 800, background: clip.bold ? "var(--color-text)" : undefined, color: clip.bold ? "var(--color-bg)" : undefined }}
+              title="Bold"
+            >
+              B
+            </button>
+            <button
+              onClick={() => updateClip(clip.id, { italic: !clip.italic })}
+              className="btn btn-secondary btn-icon"
+              style={{ width: 36, height: 36, marginTop: 21, fontStyle: "italic", background: clip.italic ? "var(--color-text)" : undefined, color: clip.italic ? "var(--color-bg)" : undefined }}
+              title="Italic"
+            >
+              I
+            </button>
+          </div>
+
+          <div className="field">
+            <label>Text color</label>
+            <input
+              type="color"
+              value={clip.textColor ?? "#ffffff"}
+              onChange={(e) => updateClip(clip.id, { textColor: e.target.value })}
+              className="input"
+              style={{ padding: 2, height: 36 }}
+            />
+          </div>
+
+          <div className="field">
+            <label>Highlight</label>
+            <div className="flex gap-2">
+              {HIGHLIGHT_SWATCHES.map((color) => (
+                <button
+                  key={color ?? "none"}
+                  onClick={() => updateClip(clip.id, { highlightColor: color ?? undefined })}
+                  title={color ?? "None"}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    background: color ?? "var(--color-bg)",
+                    border: `2px solid ${(clip.highlightColor ?? null) === color ? "var(--color-accent)" : "var(--color-divider)"}`,
+                    cursor: "pointer",
+                    display: "grid",
+                    placeItems: "center",
+                    font: "600 8px var(--font-mono)",
+                  }}
+                >
+                  {color === null && "NONE"}
+                </button>
+              ))}
             </div>
           </div>
+
+          <div className="field">
+            <label>Opacity — {Math.round((clip.opacity ?? 1) * 100)}%</label>
+            <input
+              type="range"
+              min={0.1}
+              max={1}
+              step={0.01}
+              value={clip.opacity ?? 1}
+              onChange={(e) => updateClip(clip.id, { opacity: Number(e.target.value) })}
+              style={{ width: "100%", accentColor: "var(--color-accent)" }}
+            />
+          </div>
+
           <p className="text-muted" style={{ fontSize: 11, margin: 0 }}>
             Drag the text directly on the preview to reposition it.
           </p>

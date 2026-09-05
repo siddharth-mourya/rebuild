@@ -1,10 +1,10 @@
-import { PX_PER_SEC, LABEL_WIDTH } from "./constants";
+import { PX_PER_SEC } from "./constants";
 
-export default function Playhead({ sec }: { sec: number }) {
+export default function Playhead({ sec, labelWidth }: { sec: number; labelWidth: number }) {
   return (
     <div
       className="pointer-events-none absolute top-0 bottom-0 z-10"
-      style={{ left: LABEL_WIDTH + sec * PX_PER_SEC, width: 2, background: "var(--color-accent)" }}
+      style={{ left: labelWidth + sec * PX_PER_SEC, width: 2, background: "var(--color-accent)" }}
     >
       <span
         className="absolute"

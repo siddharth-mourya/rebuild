@@ -1,8 +1,10 @@
 import { getDB } from "./db";
 import type { MediaAsset, MediaKind } from "../timeline/types";
 
-/** Reads basic metadata (duration/dimensions) from a media Blob before it's persisted. */
-async function probeMedia(kind: MediaKind, blob: Blob): Promise<{ durationSec?: number; width?: number; height?: number }> {
+/** Reads basic metadata (duration/dimensions) from a media Blob before it's persisted. Exported
+ * for the new-project wizard, which needs it before a project (and thus a place to import into)
+ * exists yet. */
+export async function probeMedia(kind: MediaKind, blob: Blob): Promise<{ durationSec?: number; width?: number; height?: number }> {
   if (kind === "image") {
     const bitmap = await createImageBitmap(blob);
     const { width, height } = bitmap;

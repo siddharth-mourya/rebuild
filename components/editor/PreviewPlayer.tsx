@@ -10,9 +10,16 @@ function activeClip(clips: Clip[], t: number): Clip | undefined {
   return clips.find((c) => t >= c.timelineStart && t < c.timelineEnd);
 }
 
+/** A freshly-loaded, paused <video> shows nothing until a frame is actually decoded — nudge it
+ * to render one instead of staying blank until the user hits play. */
+function nudgeFirstFrame(e: React.SyntheticEvent<HTMLVideoElement>) {
+  const el = e.currentTarget;
+  if (el.currentTime === 0) el.currentTime = 0.01;
+}
+
 function clipFrameStyle(clip: Clip): React.CSSProperties {
   const fit = clip.fit ?? "fill";
-  if (fit === "fit") return { objectFit: "contain" };
+  if (fit === "fit") return { objectFit: "contain", position: "relative" };
   const focusX = (clip.focusX ?? 0.5) * 100;
   const focusY = (clip.focusY ?? 0.5) * 100;
   return {
@@ -22,6 +29,23 @@ function clipFrameStyle(clip: Clip): React.CSSProperties {
     transformOrigin: `${focusX}% ${focusY}%`,
   };
 }
+
+/** Fills the letterboxed space in "fit" mode with the same source, cover-cropped and dimmed —
+ * matching how photo-editing crop tools (e.g. Lightroom) show the trimmed-away area darkened
+ * rather than as flat black bars. A fixed black scrim on top (not just a brightness filter) so
+ * the dimming reads clearly regardless of how bright or dark the source image already is. */
+const DIMMED_BACKGROUND_STYLE: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+};
+const DIMMED_BACKGROUND_SCRIM: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  background: "rgba(0, 0, 0, 0.6)",
+};
 
 function aspectRatioCss(ratio: string): string {
   const [w, h] = ratio.split(":");
@@ -50,7 +74,9 @@ export default function PreviewPlayer() {
   const videoUrl = useAssetObjectUrl(videoClip?.assetId);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const bgVideoRef = useRef<HTMLVideoElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
+  const isFitMode = (videoClip?.fit ?? "fill") === "fit";
   const [mixer] = useState(() => new AudioMixer());
   const textDragRef = useRef<{ clipId: string; pointerId: number } | null>(null);
 
@@ -75,7 +101,8 @@ export default function PreviewPlayer() {
     return () => cancelAnimationFrame(raf);
   }, [isPlaying, project, setPlayhead, setIsPlaying]);
 
-  // Keep the video element's currentTime + mute state in sync with the active clip.
+  // Keep the video element's currentTime + mute state in sync with the active clip. The dimmed
+  // background copy (fit mode only) mirrors the same time/play state but stays permanently muted.
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !videoClip) return;
@@ -84,6 +111,14 @@ export default function PreviewPlayer() {
     el.muted = !!videoClip.muted;
     if (isPlaying) el.play().catch(() => {});
     else el.pause();
+
+    const bgEl = bgVideoRef.current;
+    if (bgEl) {
+      if (Math.abs(bgEl.currentTime - localTime) > 0.25) bgEl.currentTime = localTime;
+      bgEl.muted = true;
+      if (isPlaying) bgEl.play().catch(() => {});
+      else bgEl.pause();
+    }
   }, [videoClip, playheadSec, isPlaying]);
 
   function onTextPointerDown(e: React.PointerEvent, clipId: string) {
@@ -126,11 +161,35 @@ export default function PreviewPlayer() {
         }}
       >
         {videoClip && asset?.kind === "image" && videoUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={videoUrl} alt="" className="h-full w-full" style={clipFrameStyle(videoClip)} />
+          <>
+            {isFitMode && (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={videoUrl} alt="" style={DIMMED_BACKGROUND_STYLE} />
+                <div style={DIMMED_BACKGROUND_SCRIM} />
+              </>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={videoUrl} alt="" className="h-full w-full" style={clipFrameStyle(videoClip)} />
+          </>
         )}
         {videoClip && asset?.kind === "video" && videoUrl && (
-          <video ref={videoRef} src={videoUrl} className="h-full w-full" style={clipFrameStyle(videoClip)} playsInline />
+          <>
+            {isFitMode && (
+              <>
+                <video ref={bgVideoRef} src={videoUrl} style={DIMMED_BACKGROUND_STYLE} playsInline muted onLoadedData={nudgeFirstFrame} />
+                <div style={DIMMED_BACKGROUND_SCRIM} />
+              </>
+            )}
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              className="h-full w-full"
+              style={clipFrameStyle(videoClip)}
+              playsInline
+              onLoadedData={nudgeFirstFrame}
+            />
+          </>
         )}
         {!videoClip && (
           <div className="flex h-full w-full items-center justify-center">
@@ -149,11 +208,15 @@ export default function PreviewPlayer() {
               color: textClip.textColor ?? "#ffffff",
               fontSize: textClip.fontSize ?? 32,
               fontFamily: "var(--font-heading)",
-              fontWeight: 800,
+              fontWeight: textClip.bold ? 800 : 400,
+              fontStyle: textClip.italic ? "italic" : "normal",
               textAlign: "center",
               maxWidth: "90%",
-              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+              textShadow: textClip.highlightColor ? undefined : "0 1px 4px rgba(0,0,0,0.5)",
               whiteSpace: "pre-wrap",
+              opacity: textClip.opacity ?? 1,
+              background: textClip.highlightColor,
+              padding: textClip.highlightColor ? "0.15em 0.35em" : undefined,
             }}
           >
             {textClip.text}

@@ -159,11 +159,16 @@ export async function exportProject(
     const enableStart = Math.max(0, t.timelineStart - clip.timelineStart);
     const enableEnd = Math.min(clipDuration, t.timelineEnd - clip.timelineStart);
     const fontSize = t.fontSize ?? 32;
-    const color = hexToFfmpegColor(t.textColor);
+    const opacity = t.opacity ?? 1;
+    const color = `${hexToFfmpegColor(t.textColor)}@${opacity}`;
     const xFrac = t.x ?? 0.5;
     const yFrac = t.y ?? 0.8;
+    // ffmpeg's drawtext can't synthesize bold/italic from a single static font instance, so those
+    // two stay a preview-only affordance for now; everything else (position/size/color/opacity/
+    // highlight) is baked in for real.
+    const box = t.highlightColor ? `:box=1:boxcolor=${hexToFfmpegColor(t.highlightColor)}@${opacity}:boxborderw=10` : "";
     filterSteps.push(
-      `drawtext=fontfile=Archivo.ttf:text='${escapeDrawtext(t.text ?? "")}':fontsize=${fontSize}:fontcolor=${color}:` +
+      `drawtext=fontfile=Archivo.ttf:text='${escapeDrawtext(t.text ?? "")}':fontsize=${fontSize}:fontcolor=${color}${box}:` +
         `x=(w*${xFrac})-(text_w/2):y=(h*${yFrac})-(text_h/2):enable='between(t,${enableStart},${enableEnd})'`
     );
   }

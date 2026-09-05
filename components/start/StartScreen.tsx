@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Project } from "@/lib/timeline/types";
-import { emptyProject } from "@/lib/timeline/types";
-import { deleteProject, listProjects, saveProject } from "@/lib/storage/projectStore";
+import { deleteProject, listProjects } from "@/lib/storage/projectStore";
 import ProjectThumbnail from "./ProjectThumbnail";
 
 export default function StartScreen() {
@@ -17,10 +16,8 @@ export default function StartScreen() {
     listProjects().then(setProjects);
   }, []);
 
-  async function createProject() {
-    const project = emptyProject(crypto.randomUUID(), "Untitled project");
-    await saveProject(project);
-    router.push(`/editor/${project.id}`);
+  function createProject() {
+    router.push("/new");
   }
 
   async function confirmDelete() {
@@ -48,7 +45,7 @@ export default function StartScreen() {
         <div className="mx-auto grid max-w-5xl items-end gap-14 md:grid-cols-[1.35fr_1fr]">
           <div>
             <h6 style={{ color: "var(--color-accent)", marginBottom: 14 }}>
-              No account · nothing uploaded
+              No sign up, no login required
             </h6>
             <h1 className="max-w-[18ch]" style={{ fontSize: 52 }}>
               A video editor that never leaves your browser.

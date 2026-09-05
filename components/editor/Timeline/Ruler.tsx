@@ -1,4 +1,4 @@
-import { PX_PER_SEC, LABEL_WIDTH } from "./constants";
+import { PX_PER_SEC } from "./constants";
 
 const TICK_INTERVAL_SEC = 5;
 
@@ -8,7 +8,7 @@ function fmt(sec: number): string {
   return `${m}:${s}`;
 }
 
-export default function Ruler({ durationSec }: { durationSec: number }) {
+export default function Ruler({ durationSec, labelWidth }: { durationSec: number; labelWidth: number }) {
   const tickCount = Math.ceil(durationSec / TICK_INTERVAL_SEC) + 4; // pad a few extra ticks past the last clip
   const ticks = Array.from({ length: tickCount }, (_, i) => i * TICK_INTERVAL_SEC);
 
@@ -17,12 +17,18 @@ export default function Ruler({ durationSec }: { durationSec: number }) {
       <div
         className="shrink-0"
         style={{
-          width: LABEL_WIDTH,
+          width: labelWidth,
           borderRight: "2px solid var(--color-divider)",
-          padding: "5px 12px",
+          padding: "5px 8px",
           font: "600 10px var(--font-mono)",
           letterSpacing: "0.06em",
           color: "color-mix(in srgb, var(--color-text) 50%, transparent)",
+          position: "sticky",
+          left: 0,
+          zIndex: 2,
+          background: "var(--color-bg)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
         }}
       >
         TRACKS

@@ -38,6 +38,11 @@ export type Clip = {
   text?: string;
   textColor?: string; // default "#ffffff"
   fontSize?: number; // px, default 32
+  bold?: boolean;
+  italic?: boolean;
+  /** background swatch behind the text; undefined/"none" = no highlight */
+  highlightColor?: string;
+  opacity?: number; // 0..1, default 1
   /** text track only: position on the canvas, 0..1 fractions, default 0.5/0.8 */
   x?: number;
   y?: number;

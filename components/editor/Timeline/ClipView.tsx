@@ -5,7 +5,7 @@ import { useEditorStore } from "@/store/editorStore";
 import type { Clip } from "@/lib/timeline/types";
 import { PX_PER_SEC } from "./constants";
 
-export default function ClipView({ clip }: { clip: Clip }) {
+export default function ClipView({ clip, compact = false }: { clip: Clip; compact?: boolean }) {
   const selectedClipId = useEditorStore((s) => s.selectedClipId);
   const highlightedAssetId = useEditorStore((s) => s.highlightedAssetId);
   const selectClip = useEditorStore((s) => s.selectClip);
@@ -62,8 +62,8 @@ export default function ClipView({ clip }: { clip: Clip }) {
       style={{
         width,
         left,
-        top: 6,
-        bottom: 6,
+        top: compact ? 3 : 6,
+        bottom: compact ? 3 : 6,
         background: selected ? "var(--color-accent)" : highlighted ? "var(--color-accent-100)" : "var(--color-surface)",
         color: selected ? "var(--color-bg)" : "var(--color-text)",
         border: `1px solid ${selected || highlighted ? "var(--color-accent)" : "var(--color-divider)"}`,
@@ -75,25 +75,28 @@ export default function ClipView({ clip }: { clip: Clip }) {
         onPointerDown={onPointerDown}
         className="h-full shrink-0 cursor-ew-resize"
         style={{
-          width: 8,
+          width: compact ? 10 : 8,
           background: selected ? "color-mix(in srgb, var(--color-bg) 90%, transparent)" : "var(--color-divider)",
           opacity: 0.8,
         }}
       />
-      <div data-mode="move" onPointerDown={onPointerDown} className="min-w-0 flex-1 cursor-grab px-2.5 active:cursor-grabbing">
-        <p className="truncate font-medium">{label}</p>
-        {clip.muted && (
-          <span className="tag tag-neutral" style={{ fontSize: 9.5, padding: "1px 6px" }}>
-            muted
-          </span>
-        )}
-      </div>
+      {!compact && (
+        <div data-mode="move" onPointerDown={onPointerDown} className="min-w-0 flex-1 cursor-grab px-2.5 active:cursor-grabbing">
+          <p className="truncate font-medium">{label}</p>
+          {clip.muted && (
+            <span className="tag tag-neutral" style={{ fontSize: 9.5, padding: "1px 6px" }}>
+              muted
+            </span>
+          )}
+        </div>
+      )}
+      {compact && <div data-mode="move" onPointerDown={onPointerDown} className="min-w-0 flex-1 cursor-grab self-stretch" />}
       <div
         data-mode="right"
         onPointerDown={onPointerDown}
         className="h-full shrink-0 cursor-ew-resize"
         style={{
-          width: 8,
+          width: compact ? 10 : 8,
           background: selected ? "color-mix(in srgb, var(--color-bg) 90%, transparent)" : "var(--color-divider)",
           opacity: 0.8,
         }}
